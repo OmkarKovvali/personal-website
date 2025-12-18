@@ -100,7 +100,7 @@ footer {
 /* Inline code */
 code {
     font-family: 'Courier New', monospace;
-    background: rgba(0,0,0,0.1); /* Subtle dark background */
+    background: rgba(0,0,0,0.1);
     padding: 0.1rem 0.3rem;
     border-radius: 3px;
     font-size: 0.9em;
@@ -108,21 +108,61 @@ code {
 
 /* Multi-line code blocks */
 pre {
-    background: #1a1a1a; /* Dark terminal background */
-    color: #f8f8f2;      /* Light text */
+    background: #1a1a1a;
+    color: #f8f8f2;
     padding: 1.5rem;
     border-radius: 4px;
-    overflow-x: auto;    /* Adds scrollbar if code is too wide */
-    margin: 2rem 0;
+    overflow-x: auto;
+    margin: 2rem auto; /* Center the code block */
     border: 1px solid #333;
+    max-width: 90%; /* Prevent it from being too wide on large screens */
 }
 
-/* Reset code inside pre to avoid double padding/background */
+/* Syntax highlighting simulation (since we don't have a library) */
 pre code {
     background: none;
     padding: 0;
     color: inherit;
     border: none;
+}
+
+/* Images */
+figure {
+    margin: 2rem auto;
+    text-align: center;
+    max-width: 100%;
+}
+
+figure img {
+    max-width: 600px; /* Constrain large screenshots */
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    display: block;
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* For side-by-side images */
+figure .image-row {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+figure .image-row img {
+    max-width: 280px; /* Smaller for side-by-side */
+    flex: 1;
+    min-width: 200px;
+}
+
+figcaption {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: var(--accent-color);
+    text-align: center;
 }
 
 .social-links a {
@@ -313,4 +353,94 @@ li {
         margin-left: 0;
         margin-right: 1.5rem;
     }
+}
+
+/* Inline code */
+p code, li code, blockquote code {
+    background: rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 0.08rem 0.35rem;
+    border-radius: 6px;
+}
+
+/* Code block container */
+.code-block-wrapper {
+    position: relative;
+    margin: 2rem auto;
+    max-width: 800px;
+}
+
+/* Copy button */
+.copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+}
+
+.copy-btn svg {
+    display: block;
+}
+
+.copy-btn:hover {
+    background: rgba(0,0,0,0.9);
+    transform: translateY(-1px);
+}
+
+.copy-btn.copied {
+    background: #28c840;
+    border-color: #28c840;
+    color: #fff;
+}
+
+/* Multi-line code blocks */
+pre {
+    position: relative;
+    margin: 0;
+    padding: 1.5rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    background: #1e1e1e;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+pre code {
+    display: block;
+    background: none;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    font-family: 'Courier New', 'Consolas', monospace;
+    color: #d4d4d4;
+}
+
+/* Scrollbar styling */
+pre::-webkit-scrollbar {
+    height: 8px;
+}
+
+pre::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+}
+
+pre::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
 }

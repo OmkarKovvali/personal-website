@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overlord - Omkar K.</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -40,11 +42,11 @@
                 </p>
 
                 <figure>
-                    <div style="display: flex; gap: 10px; justify-content: center;">
-                        <img src="assets/main.png" alt="Description 1" style="width: 48%; height: auto;">
-                        <img src="assets/timer.png" alt="Description 2" style="width: 48%; height: auto;">
+                    <div class="image-row">
+                        <img src="assets/main.png" alt="Overlord main screen with task input">
+                        <img src="assets/timer.png" alt="Overlord timer overlay">
                     </div>
-                    <figcaption>Fig 2. Your caption for both images</figcaption>
+                    <figcaption>Fig 2. Main screen and timer overlay</figcaption>
                 </figure>
 
                 <p>Once initiated, the screen minimizes into a timer in the corner and overlays all applications, including full-screen ones. 
@@ -66,13 +68,13 @@
                 </p>
 
                 <figure>
-                    <img src="assets/lockout.png" alt="System architecture diagram showing server-client relationship">
-                    <figcaption>Fig 1. Architecture Diagram</figcaption>
+                    <img src="assets/lockout.png" alt="Locked screen showing violation detection">
+                    <figcaption>Fig 3. Lockout screen when user goes off-task</figcaption>
                 </figure>
 
                 <figure>
-                    <img src="assets/messages.png" alt="System architecture diagram showing server-client relationship">
-                    <figcaption>Fig 1. Architecture Diagram</figcaption>
+                    <img src="assets/messages.png" alt="Poke messages verifying pushup completion">
+                    <figcaption>Fig 4. Poke verifying task completion via messages</figcaption>
                 </figure>
 
                 <p>Decoupling Client from the Infrastructure:</p>
@@ -81,54 +83,63 @@
                 </p>
 
                 <figure>
-                    <img src="assets/settings.png" alt="System architecture diagram showing server-client relationship">
-                    <figcaption>Fig 1. Architecture Diagram</figcaption>
+                    <img src="assets/settings.png" alt="Settings page for configuring server URL">
+                    <figcaption>Fig 5. Dynamic configuration settings</figcaption>
                 </figure>
                 <h2>Technical Learnings</h2>
                 <h3>Electron:</h3>
                 <p>This was my first time building with Electron and learning all about IPC (Inter-Process Communication) between the Main Process and Renderer Process was pretty cool.</p>
-                <pre><code>
-                    ipcMain.on('start-focus-mode', (event, duration, task) => {
-                        console.log('start focus mode signal activated yuhh') 
-                    })
-                    </code></pre>
+                <div class="code-block-wrapper">
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    </button>
+                    <pre><code class="language-javascript">ipcMain.on('start-focus-mode', (event, duration, task) => {
+    console.log('start focus mode signal activated yuhh') 
+})</code></pre>
+                </div>
                 <h3>Architecture:</h3>
                 <p>Though I had a vision for the product before I started, drawing out some diagrams and deep diving into the differences between MCP and REST really helped iron out my thought process. Overlord uses a standard REST API for the “punishment” flow and Model Context Protocol interface for the “redemption” flow. This lets Poke mutate state directly on my server.</p>
                 <h3>Distributed State Consistency</h3>
                 <p>Most of my previous understanding of state was purely theoretical. This project was extremely useful in having my work with stateless and stateful components hands-on.</p>
-                <pre><code>
-                    # Judge class maintains the authoritative state
-                    class Judge: 
-                        def __init__(self):
-                            self.locked = False
-                            self.offenses = 0
-                        
-                        def status(self):
-                            return {"locked": self.locked, "offenses": self.offenses}
+                <div class="code-block-wrapper">
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    </button>
+                    <pre><code class="language-python"># Judge class maintains the authoritative state
+class Judge: 
+    def __init__(self):
+        self.locked = False
+        self.offenses = 0
+    
+    def status(self):
+        return {"locked": self.locked, "offenses": self.offenses}
 
-                        def punish(self):
-                            self.offenses += 1
-                            self.locked = True
-                            # ... trigger external consequences (Poke/SMS) ...
-                            return self.status()
+    def punish(self):
+        self.offenses += 1
+        self.locked = True
+        # ... trigger external consequences (Poke/SMS) ...
+        return self.status()
 
-                        def forgive(self):
-                            self.locked = False
-                            return self.status()
+    def forgive(self):
+        self.locked = False
+        return self.status()
 
-                        judge = Judge()
-                    </code></pre>
+judge = Judge()</code></pre>
+                </div>
                 <p>
                     After running into a minefield of race conditions, I realized I had to establish a single source of truth for state across the distributed system (Renderer, Main Process, Python Server, Poke). The python server maintains the authoritative lock state while the Electron client treats its local state as speculative and uses polling to reconcile. Poke is the only component that can mutate lock state via MCP. The React front-end is a UI that is limited to rendering what the main process dictates via IPC events.
                 </p>
-                <pre><code>
-                    const scheduleNextRun = (): void => {
-                        if (isFocusModeActive) {
-                          console.log("Scheduling next check in 30s...");
-                          setTimeout(() => runFocusCheck(window, task), 30000);
-                        }
-                      };
-                    </code></pre>
+                <div class="code-block-wrapper">
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    </button>
+                    <pre><code class="language-typescript">const scheduleNextRun = (): void => {
+    if (isFocusModeActive) {
+        console.log("Scheduling next check in 30s...");
+        setTimeout(() => runFocusCheck(window, task), 30000);
+    }
+};</code></pre>
+                </div>
                 <p>One specific problem I ran into was using setInterval instead of setTimeout. During testing, I discovered that even when Electron went into kiosk mode and locked out the user, screenshots continued to be captured. Analysis revealed that setInterval is “fire-and-forget”, meaning that screenshots can’t be stopped! Additionally, if the network is really poor, multiple requests could be running in parallel and fighting for bandwidth leading to race conditions. Refactoring the code to use the recursive setTimeout guaranteed sequential execution and proper stoppage of screenshots.
                 </p>
                 <h2>Next Steps</h2>
@@ -148,18 +159,54 @@
             </div>
         </article>
 
-    <div class="social-links">
-        <a href="https://x.com/yourhandle" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
-            <img src="assets/X_logo_2023.svg.png" alt="X (Twitter)">
-        </a>
-        <a href="https://linkedin.com/in/yourhandle" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-linkedin"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-        </a>
-        <a href="https://github.com/yourhandle" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-        </a>
-        <a href="https://instagram.com/yourhandle" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-instagram"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-        </a>
+        <footer>
+            <div class="social-links">
+                <a href="https://x.com/KovvaliOmkar" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+                    <img src="assets/X_logo_2023.svg.png" alt="X (Twitter)">
+                </a>
+                <a href="https://www.linkedin.com/in/omkarkovvali/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-linkedin"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                </a>
+                <a href="https://github.com/OmkarKovvali" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                </a>
+                <a href="https://www.instagram.com/omkar.kovvali/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-instagram"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                </a>
+            </div>
+        </footer>
     </div>
-</footer>
+    <script src="script.js"></script>
+    <script>
+        // Initialize highlight.js
+        document.addEventListener('DOMContentLoaded', () => {
+            hljs.highlightAll();
+        });
+
+        // Copy code functionality
+        function copyCode(button) {
+            const wrapper = button.parentElement;
+            const code = wrapper.querySelector('code');
+            const text = code.textContent;
+
+            const originalHTML = button.innerHTML;
+
+            navigator.clipboard.writeText(text).then(() => {
+                button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                button.textContent = '✗';
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
