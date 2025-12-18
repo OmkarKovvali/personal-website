@@ -25,29 +25,126 @@
             <div class="article-content">
                 <p>After seeing Poke by The Interaction Company release and how it was able to control its own price autonomously, I wondered what other tools Poke could be given access to. A few months later while fiddling with productivity softwares, I was super unsatisfied with productivity tools’ “blanket” coverage. They couldn’t discriminate between Youtube for Karpathy’s videos and brainrot videos. </p>
 
-                <p>His instinct was to scan for big markets. Healthcare AI. Vertical SaaS. Before he got too far, I asked: What does your team know that nobody else does?</p>
+                <p>It then occurred to me that I could tie these two ideas together to engineer an agentic system that was able to discern between task-relevant and irrelevant screen content. Months went by however, with the idea collecting dust. But it was during studying for finals that I decided to bring it to life. What follows is a technical write-up of two weeks of learning Electron, MCP, server-client relationships, and writing most logic code by-hand for learning's sake.
+                </p>
                 
-                <p>He didn’t have an answer.</p>
+                <figure>
+                    <img src="assets/architecture.png" alt="System architecture diagram showing server-client relationship">
+                    <figcaption>Fig 1. Architecture Diagram</figcaption>
+                </figure>
 
-                <p>Most founders start with the market. Find a large TAM, spot a gap, build. This works until someone with deeper expertise shows up. Someone who didn’t study the problem but lived it.</p>
+                <p>At a high level, Overlord consists of four components: a local Electron client, a coordinating Python server, an external agent (Poke), and OpenAI API.The architecture is intentionally minimal and can be best demonstrated with a demo walk-through.
+                </p>
 
-                <p>Chris Sacca shared recently on Dialectic: “Only play rigged games.” He avoids public markets because he’s just a spectator there. In venture, he can shift the odds. “It may be lucky,” he says, “but it’s not an accident.”</p>
+                <p>After a user opens the application, they are greeted with the main Overlord screen, which asks them to enter an objective (task) and duration. 
+                </p>
 
-                <p>Unfair advantages come in three flavors: product insight, go-to-market edge, technical moat. One gets you in the game. Two means you’re dangerous. Three is how monopolies get built.</p>
+                <figure>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <img src="assets/main.png" alt="Description 1" style="width: 48%; height: auto;">
+                        <img src="assets/timer.png" alt="Description 2" style="width: 48%; height: auto;">
+                    </div>
+                    <figcaption>Fig 2. Your caption for both images</figcaption>
+                </figure>
 
-                <p>The common thread is obsession that rational people would walk away from.</p>
+                <p>Once initiated, the screen minimizes into a timer in the corner and overlays all applications, including full-screen ones. 
+                </p>
 
-                <p>Christina Cacioppo had been buried in SOC 2 compliance at Dropbox. Moved into Segment’s office for weeks, read dozens of audit reports, mapped exactly where the friction lived. Investors passed because the market looked small. She saw where it was going before they did. Hit $10M ARR on just her seed round, then took their money. Vanta is now worth $2.45B.</p>
+                <p>Every 30 seconds, a screenshot is taken. Electron passes the screenshot to the server (hosted on Render), which then submits the user’s declared task plus the current screenshot to OpenAI’s 4o vision model and requests a strict binary verdict (YES/NO) as to if the user is on task. 
+                </p>
 
-                <p>Parker Conrad got ousted from Zenefits. A board member told him he didn’t have another company in him. Every mistake he’d made became a lesson nobody else had experienced. Rippling: $11B.</p>
+                <p>If “YES”, the screenshot loop will continue until the timer runs out.
+                </p>
 
-                <p>Eric Glyman sold his first company to Capital One, then stayed over two years. Learned how the entire card industry was designed to make customers spend more. Left asking one question nobody else would: what if your card helped you spend less? Ramp hit $300M ARR in four years.</p>
+                <p>In case that “NO” is passed to Electron, the application goes into “Kiosk Mode”, which restricts standard exit paths (Command-Q, window switching) but isn’t a kernel-level lock. 
+                </p>
 
-                <p>None of them started with a market scan. Some had deep expertise. Others were just users who couldn’t stand the status quo. The Collisons hated accepting money online. Slack was a side project inside a failing game company. Same result: problems they couldn’t stop thinking about.</p>
+                <p>Shortly after, Electron does a fetch to the server, which uses the POST method /punish to tell Poke that the user is misbehaving and needs to send proof of completing X task (10 pushups in this case) before the screen will be unlocked. At this point, all that’s left is for Poke to determine that the user has completed X task, before it exercises the unlock_user() tool via MCP (Model Context Protocol), which updates the server’s locked state to false. 
+                </p>
 
-                <p>The pivoting founder went back to the drawing board. His team found their edge in regulated industries. Brutal markets where complexity filters out everyone who hasn’t already done the work.</p>
+                <p>All this while, Electron has been async polling the server every 500ms (via GET requests), waiting for this. Once this happens, Electron unlocks the user’s screen and returns them to the homescreen.
+                </p>
 
-                <p>Most startups die by fighting fair. Find your edge.</p>
+                <figure>
+                    <img src="assets/lockout.png" alt="System architecture diagram showing server-client relationship">
+                    <figcaption>Fig 1. Architecture Diagram</figcaption>
+                </figure>
+
+                <figure>
+                    <img src="assets/messages.png" alt="System architecture diagram showing server-client relationship">
+                    <figcaption>Fig 1. Architecture Diagram</figcaption>
+                </figure>
+
+                <p>Decoupling Client from the Infrastructure:</p>
+
+                <p>Halfway through making the github public, it occurred to me that I would need to allow users to use their own Poke and OpenAI API keys! To enable this and make Overlord a distributable product and not just a personal script, I implemented a dynamic configuration store (electron-store) that lets users plug in their own python server without recompiling the electron app.
+                </p>
+
+                <figure>
+                    <img src="assets/settings.png" alt="System architecture diagram showing server-client relationship">
+                    <figcaption>Fig 1. Architecture Diagram</figcaption>
+                </figure>
+                <h2>Technical Learnings</h2>
+                <h3>Electron:</h3>
+                <p>This was my first time building with Electron and learning all about IPC (Inter-Process Communication) between the Main Process and Renderer Process was pretty cool.</p>
+                <pre><code>
+                    ipcMain.on('start-focus-mode', (event, duration, task) => {
+                        console.log('start focus mode signal activated yuhh') 
+                    })
+                    </code></pre>
+                <h3>Architecture:</h3>
+                <p>Though I had a vision for the product before I started, drawing out some diagrams and deep diving into the differences between MCP and REST really helped iron out my thought process. Overlord uses a standard REST API for the “punishment” flow and Model Context Protocol interface for the “redemption” flow. This lets Poke mutate state directly on my server.</p>
+                <h3>Distributed State Consistency</h3>
+                <p>Most of my previous understanding of state was purely theoretical. This project was extremely useful in having my work with stateless and stateful components hands-on.</p>
+                <pre><code>
+                    # Judge class maintains the authoritative state
+                    class Judge: 
+                        def __init__(self):
+                            self.locked = False
+                            self.offenses = 0
+                        
+                        def status(self):
+                            return {"locked": self.locked, "offenses": self.offenses}
+
+                        def punish(self):
+                            self.offenses += 1
+                            self.locked = True
+                            # ... trigger external consequences (Poke/SMS) ...
+                            return self.status()
+
+                        def forgive(self):
+                            self.locked = False
+                            return self.status()
+
+                        judge = Judge()
+                    </code></pre>
+                <p>
+                    After running into a minefield of race conditions, I realized I had to establish a single source of truth for state across the distributed system (Renderer, Main Process, Python Server, Poke). The python server maintains the authoritative lock state while the Electron client treats its local state as speculative and uses polling to reconcile. Poke is the only component that can mutate lock state via MCP. The React front-end is a UI that is limited to rendering what the main process dictates via IPC events.
+                </p>
+                <pre><code>
+                    const scheduleNextRun = (): void => {
+                        if (isFocusModeActive) {
+                          console.log("Scheduling next check in 30s...");
+                          setTimeout(() => runFocusCheck(window, task), 30000);
+                        }
+                      };
+                    </code></pre>
+                <p>One specific problem I ran into was using setInterval instead of setTimeout. During testing, I discovered that even when Electron went into kiosk mode and locked out the user, screenshots continued to be captured. Analysis revealed that setInterval is “fire-and-forget”, meaning that screenshots can’t be stopped! Additionally, if the network is really poor, multiple requests could be running in parallel and fighting for bandwidth leading to race conditions. Refactoring the code to use the recursive setTimeout guaranteed sequential execution and proper stoppage of screenshots.
+                </p>
+                <h2>Next Steps</h2>
+                <h3>Migrating to Local LLMs</h3>
+                <p>Yes, I’m aware that having possibly sensitive data leave the computer and into OpenAI’s hands is far from ideal. Ollama model support will be introduced ASAP. 
+                </p>
+                <h3>Real-Time Locking</h3>
+                <p>After I finished coding up everything, I realized that I could have used websockets for real-time locking instead of polling. At this point I had already spent a lot of time fixing bugs + refactoring. Decided to prioritize shipping for now, but will come back to this hopefully soon.
+                </p>
+                <h3>Data Persistence</h3>
+                <p>Since this app doesn’t have many data points that need to persist, I have chosen to keep it as lightweight as possible and not add a database. It would be trivial to add a database that would allow Poke to increase punishments based off of repeat offences.
+                </p>
+                <p>I had a lot of fun building this out! Would love for you to try it out and give me feedback! Code is live on Github.</p>
+
+
+
             </div>
         </article>
 
