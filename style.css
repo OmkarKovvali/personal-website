@@ -19,7 +19,7 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     font-family: var(--font-main);
-    line-height: 1.6;
+    line-height: 1.3;
     font-size: 18px;
     font-weight:normal;
     text-shadow: 0 0 0.5px rgba(0,0,0,0.1);
@@ -227,7 +227,7 @@ h2 {
 }
 
 p {
-    margin-bottom: 1.2rem;
+    margin-bottom: 0.7rem;
 }
 
 .subtitle {
