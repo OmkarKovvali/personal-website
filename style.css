@@ -3,8 +3,8 @@
     --text-color: #000;
     --accent-color: #666;
     --link-color: #000;
-    --font-main: 'Courier New', Courier, monospace;
-    --font-mono: 'Courier New', Courier, monospace;
+    --font-main: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", "DejaVu Sans Mono", monospace;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", "DejaVu Sans Mono", monospace;
     --spacing-unit: 1.5rem;
     --max-width: 680px;
 }
@@ -99,7 +99,7 @@ footer {
 
 /* Inline code */
 code {
-    font-family: 'Courier New', monospace;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", "DejaVu Sans Mono", monospace;
     background: rgba(0,0,0,0.1);
     padding: 0.1rem 0.3rem;
     border-radius: 3px;
@@ -422,7 +422,7 @@ pre code {
     padding: 0;
     font-size: 14px;
     line-height: 1.6;
-    font-family: 'Courier New', 'Consolas', monospace;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", "DejaVu Sans Mono", monospace;
     color: #d4d4d4;
 }
 
